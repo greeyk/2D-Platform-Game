@@ -6,6 +6,18 @@ __pycache__/
 # C extensions
 *.so
 
+.idea
+
+# py files
+game.py
+scratchpad.py
+
+#folders
+platform_graphics/2 - Level/
+platform_graphics/3 - Overworld/
+graphics2/
+music/
+
 # Distribution / packaging
 .Python
 build/
