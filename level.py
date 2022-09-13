@@ -7,26 +7,33 @@ from settings import tile_size, screen_width, screen_height
 from playerr import Player
 from support import import_csv_layout, import_cut_graphics
 from decoration import Sky, Water, Clouds
+from game_data import levels
 
 
 class Level:
-    def __init__(self, level_data, surface):
+    def __init__(self, current_level, surface, create_overworld):
 
-        # level setup
+        # general setup
         self.display_surface = surface
-        # self.setup_level(level_data)
         self.world_shift = 0
         self.current_x = None
 
-        # dust
-        self.dust_sprite = pygame.sprite.GroupSingle()
-        self.player_on_ground = False
+        # overworld connection
+        self.create_overworld = create_overworld
+        self.current_level = current_level
+        level_data = levels[self.current_level]
+        self.new_max_level = level_data['unlock']
+
 
         # player
         player_layout = import_csv_layout(level_data['player'])
         self.player = pygame.sprite.GroupSingle()
         self.goal = pygame.sprite.GroupSingle()
         self.player_setup(player_layout)
+
+        # dust
+        self.dust_sprite = pygame.sprite.GroupSingle()
+        self.player_on_ground = False
 
         # terrain setup
         terrain_layout = import_csv_layout(level_data['terrain'])
@@ -66,6 +73,12 @@ class Level:
         self.water = Water(screen_height - 25, level_width)
         self.clouds = Clouds(400, level_width, 30)
 
+    def input(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RETURN]:
+            self.create_overworld(self.current_level, self.new_max_level)
+        if keys[pygame.K_ESCAPE]:
+            self.create_overworld(self.current_level, 0)
 
     def create_tile_group(self, layout, type):
         sprite_group = pygame.sprite.Group()
@@ -76,12 +89,12 @@ class Level:
                     y = row_index * tile_size
 
                     if type == 'terrain':
-                        terrain_tile_list = import_cut_graphics('platform_graphics/graphics/terrain/terrain_tiles.png')
+                        terrain_tile_list = import_cut_graphics('graphics/terrain/terrain_tiles.png')
                         tile_surface = terrain_tile_list[int(val)]
                         sprite = StaticTile(tile_size, x, y, tile_surface)
 
                     if type == 'grass':
-                        grass_tile_list = import_cut_graphics('platform_graphics/graphics/decoration/grass/grass.png')
+                        grass_tile_list = import_cut_graphics('graphics/decoration/grass/grass.png')
                         tile_surface = grass_tile_list[int(val)]
                         sprite = StaticTile(tile_size, x, y, tile_surface)
 
@@ -90,18 +103,18 @@ class Level:
 
                     if type == 'coins':
                         if val == '0':
-                            sprite = Coin(tile_size, x, y, 'platform_graphics/graphics/coins/gold')
+                            sprite = Coin(tile_size, x, y, 'graphics/coins/gold')
                         if val == '1':
-                            sprite = Coin(tile_size, x, y, 'platform_graphics/graphics/coins/silver')
+                            sprite = Coin(tile_size, x, y, 'graphics/coins/silver')
 
                     if type == 'fg palms':
                         if val == '0':
-                            sprite = Palm(tile_size, x, y, 'platform_graphics/graphics/terrain/palm_small', 40)
+                            sprite = Palm(tile_size, x, y, 'graphics/terrain/palm_small', 40)
                         if val == '1':
-                            sprite = Palm(tile_size, x, y, 'platform_graphics/graphics/terrain/palm_large', 68)
+                            sprite = Palm(tile_size, x, y, 'graphics/terrain/palm_large', 68)
 
                     if type == 'bg palms':
-                        sprite = Palm(tile_size, x, y, 'platform_graphics/graphics/terrain/palm_bg', 64)
+                        sprite = Palm(tile_size, x, y, 'graphics/terrain/palm_bg', 64)
 
                     if type == 'enemies':
                         sprite = Enemy(tile_size, x, y)
@@ -122,7 +135,7 @@ class Level:
                     sprite = Player((x, y), self.display_surface, self.create_jump_particles)
                     self.player.add(sprite)
                 if val == '1':
-                    hat_surface = pygame.image.load('platform_graphics/graphics/character/hat.png').convert_alpha()
+                    hat_surface = pygame.image.load('graphics/character/hat.png').convert_alpha()
                     sprite = StaticTile(tile_size, x, y, hat_surface)
                     self.goal.add(sprite)
 
@@ -228,12 +241,19 @@ class Level:
             if pygame.sprite.spritecollide(enemy, self.constraints_sprites, False):
                 enemy.reverse()
 
+    def check_death(self):
+        if self.player.sprite.rect.top > screen_height:
+            self.create_overworld(self.current_level, 0)
+
+    def check_win(self):
+        if pygame.sprite.spritecollide(self.player.sprite, self.goal, False):
+            self.create_overworld(self.current_level, self.new_max_level)
     def run(self):
         # # level tiles
         # self.tiles.update(self.world_shift)
         # self.tiles.draw(self.display_surface)
-        self.scroll_x()
-
+        # self.display_surface.blit(self.text_surf, self.text_rect)
+        self.input()
 
         # sky
         self.sky.draw(self.display_surface)
@@ -274,14 +294,20 @@ class Level:
         self.dust_sprite.draw(self.display_surface)
 
         # player sprites
-        self.goal.update(self.world_shift)
-        self.goal.draw(self.display_surface)
         self.player.update()
-        self.player.draw(self.display_surface)
         self.horizontal_movement_collision()
+
         self.get_player_on_ground()
         self.vertical_movement_collision()
         self.create_landing_dust()
+
+        self.scroll_x()
+        self.player.draw(self.display_surface)
+        self.goal.update(self.world_shift)
+        self.goal.draw(self.display_surface)
+
+        self.check_death()
+        self.check_win()
 
         # water
         self.water.draw(self.display_surface, self.world_shift)
