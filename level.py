@@ -4,7 +4,7 @@ from enemy import Enemy
 from particles import ParticleEffect
 from tiles import Tile, StaticTile, Crate, Coin, Palm
 from settings import tile_size, screen_width, screen_height
-from playerr import Player
+from player import Player
 from support import import_csv_layout, import_cut_graphics
 from decoration import Sky, Water, Clouds
 from game_data import levels
@@ -171,23 +171,6 @@ class Level:
                 offset = pygame.math.Vector2(-10, 15)
             fall_dust_particle = ParticleEffect(self.player.sprite.rect.midbottom - offset, 'land')
             self.dust_sprite.add(fall_dust_particle)
-
-    # def setup_level(self, layout):
-    #     self.tiles = pygame.sprite.Group()
-    #     self.player = pygame.sprite.GroupSingle()
-    #
-    #     for row_index, row in enumerate(layout):
-    #         for col_index, cell in enumerate(row):
-    #             # print(f'{row_index},{col_index}:{cell}')
-    #             x = col_index * tile_size
-    #             y = row_index * tile_size
-    #
-    #             if cell == 'X':
-    #                 tile = Tile((x, y), tile_size)
-    #                 self.tiles.add(tile)
-    #             if cell == 'P':
-    #                 player_sprite = Player((x, y), self.display_surface, self.create_jump_particles)
-    #                 self.player.add(player_sprite)
 
     def scroll_x(self):
         player = self.player.sprite
