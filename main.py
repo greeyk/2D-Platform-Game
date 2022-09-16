@@ -3,7 +3,6 @@ import pygame, sys
 from overworld import Overworld
 from settings import *
 from level import Level
-from game_data import level_0
 from ui import UI
 
 
